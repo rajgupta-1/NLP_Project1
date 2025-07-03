@@ -27,7 +27,7 @@ if uploaded_file:
     # Send to OCR.space API
     with st.spinner("⏳ Performing OCR..."):
         response = requests.post(
-            "https://api.ocr.space/parse/image",
+            "K83683705188957",
             files={"filename": img_bytes},
             data={"apikey": api_key, "language": "eng"},
         )
