@@ -1,43 +1,42 @@
 import streamlit as st
+from st_audiorec import st_audiorec
 import speech_recognition as sr
 from gtts import gTTS
 from io import BytesIO
-from pydub import AudioSegment
-from pydub.playback import play
 import tempfile
 
-st.set_page_config(page_title="🎙 Voice Recognition + TTS", layout="centered")
-st.title(" Voice to Text and Text to Speech App (Web-based)")
+st.set_page_config(page_title="🎙 Live Voice to Text & TTS", layout="centered")
+st.title("🗣️ Live Speech to Text and Text-to-Speech App")
 
-# File upload
-audio_file = st.file_uploader(" Upload a WAV audio file (Mono PCM)", type=["wav"])
+# 🎤 Record audio using streamlit-audio-recorder
+wav_audio_data = st_audiorec()
 
-if audio_file is not None:
-    st.audio(audio_file, format="audio/wav")
+recognized_text = ""
 
-    # Save uploaded file temporarily
+if wav_audio_data:
+    # Save the recorded audio to a temp WAV file
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-        tmp.write(audio_file.read())
+        tmp.write(wav_audio_data)
         tmp_path = tmp.name
+        st.audio(wav_audio_data, format='audio/wav')
 
+    # Speech Recognition
     recognizer = sr.Recognizer()
-
     with sr.AudioFile(tmp_path) as source:
-        audio_data = recognizer.record(source)
+        audio = recognizer.record(source)
 
-        try:
-            text = recognizer.recognize_google(audio_data)
-            st.success(f" Recognized Text: **{text}**")
+    try:
+        recognized_text = recognizer.recognize_google(audio)
+        st.success(f" Recognized Text: **{recognized_text}**")
+    except sr.UnknownValueError:
+        st.error(" Could not understand audio.")
+    except sr.RequestError:
+        st.error(" Speech recognition service is unavailable.")
 
-            # Convert recognized text to speech using gTTS
-            tts = gTTS(text)
-            mp3_fp = BytesIO()
-            tts.write_to_fp(mp3_fp)
-            st.audio(mp3_fp, format="audio/mp3", start_time=0)
-
-        except sr.UnknownValueError:
-            st.error(" Could not understand audio.")
-
-        except sr.RequestError:
-            st.error(" Speech recognition service is unavailable.")
-
+# 🔘 Convert recognized text to speech
+if recognized_text and st.button(" Convert to Speech"):
+    tts = gTTS(recognized_text)
+    mp3_fp = BytesIO()
+    tts.write_to_fp(mp3_fp)
+    mp3_fp.seek(0)
+    st.audio(mp3_fp, format="audio/mp3")
