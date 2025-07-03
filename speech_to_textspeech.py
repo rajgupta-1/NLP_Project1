@@ -1,14 +1,14 @@
 import streamlit as st
 from PIL import Image
-import pytesseract
+import requests
+from io import BytesIO
 from langdetect import detect
 from gtts import gTTS
-from io import BytesIO
 
-st.set_page_config(page_title="🧠 OCR + Text-to-Speech", layout="centered")
-st.title("📷 OCR Text Reader with Voice")
+st.set_page_config(page_title="OCR + TTS (Cloud)", layout="centered")
+st.title("📷 Cloud OCR + Text-to-Speech App")
 
-# Upload Image
+# ⬆ Upload Image
 uploaded_file = st.file_uploader("📤 Upload an image (JPG, PNG)", type=["jpg", "jpeg", "png"])
 
 if uploaded_file:
@@ -16,26 +16,42 @@ if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption="Uploaded Image", use_column_width=True)
 
-    # OCR directly with Pillow image (no OpenCV)
-    text = pytesseract.image_to_string(image).strip()
+    # Convert to bytes
+    img_bytes = BytesIO()
+    image.save(img_bytes, format='PNG')
+    img_bytes.seek(0)
+
+    # 🔑 Replace this with your API key from ocr.space
+    api_key = "helloworld"  # Free demo key (limited)
+
+    # Send to OCR.space API
+    with st.spinner("⏳ Performing OCR..."):
+        response = requests.post(
+            "https://api.ocr.space/parse/image",
+            files={"filename": img_bytes},
+            data={"apikey": api_key, "language": "eng"},
+        )
+
+    result = response.json()
+    text = result['ParsedResults'][0]['ParsedText'].strip() if result['IsErroredOnProcessing'] == False else ""
 
     if text:
         st.subheader("📝 Extracted Text")
         st.text_area("Detected Text", value=text, height=200)
 
-        # Detect Language
+        # Language Detection
         try:
             lang = detect(text)
         except:
             lang = "en"
         st.markdown(f"🌐 **Detected Language:** `{lang}`")
 
-        # Button to speak the text
-        if st.button("🔊 Read Text Aloud"):
+        # TTS Button
+        if st.button("🔊 Speak Text"):
             tts = gTTS(text=text, lang=lang)
             mp3_fp = BytesIO()
             tts.write_to_fp(mp3_fp)
             mp3_fp.seek(0)
             st.audio(mp3_fp, format="audio/mp3")
     else:
-        st.warning("❗ No text found in the image.")
+        st.error("❌ OCR failed or no text found.")
