@@ -6,7 +6,7 @@ from langdetect import detect
 from gtts import gTTS
 
 st.set_page_config(page_title="OCR + TTS (Cloud)", layout="centered")
-st.title("Text-To-Speech AI App By Raj")
+st.title("Image Text convert To-Speech AI App By Raj")
 
 # Upload Image
 uploaded_file = st.file_uploader(" Upload an image (JPG, PNG)", type=["jpg", "jpeg", "png"])
