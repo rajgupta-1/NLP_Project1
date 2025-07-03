@@ -6,13 +6,13 @@ from langdetect import detect
 from gtts import gTTS
 
 st.set_page_config(page_title="OCR + TTS (Cloud)", layout="centered")
-st.title("📷 OCR + Text-to-Speech Web App (Powered by OCR.space)")
+st.title("📷 OCR + Text-to-Speech App (OCR.space)")
 
 # Upload Image
 uploaded_file = st.file_uploader("📤 Upload an image (JPG, PNG)", type=["jpg", "jpeg", "png"])
 
 if uploaded_file:
-    # Display image
+    # Show uploaded image
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption="Uploaded Image", use_column_width=True)
 
@@ -21,14 +21,14 @@ if uploaded_file:
     image.save(img_bytes, format='PNG')
     img_bytes.seek(0)
 
-    # OCR.space API key
-    api_key = "K83683705188957"  # ✅ Your working API key
+    # API key
+    api_key = "K83683705188957"  # ✅ Your key
 
-    # OCR API Call
-    with st.spinner("⏳ Extracting text using OCR.space..."):
+    # Send to OCR.space
+    with st.spinner("⏳ Performing OCR..."):
         response = requests.post(
             "https://api.ocr.space/parse/image",
-            files={"filename": img_bytes},
+            files={"filename": ("image.png", img_bytes, "image/png")},  # <-- FIXED
             data={
                 "apikey": api_key,
                 "language": "eng",
@@ -53,7 +53,6 @@ if uploaded_file:
                 lang = "en"
             st.markdown(f"🌐 **Detected Language:** `{lang}`")
 
-            # Speak button
             if st.button("🔊 Speak Text"):
                 tts = gTTS(text=parsed_text, lang=lang)
                 mp3_fp = BytesIO()
@@ -61,8 +60,7 @@ if uploaded_file:
                 mp3_fp.seek(0)
                 st.audio(mp3_fp, format="audio/mp3")
         else:
-            st.warning("⚠️ No text found in the image.")
+            st.warning("⚠️ No text detected in the image.")
     else:
-        st.error("❌ OCR failed. Please try a different image or check your API key.")
-        if "ErrorMessage" in result:
-            st.warning(f"🛠 Error: {result['ErrorMessage']}")
+        st.error("❌ OCR failed.")
+        st.warning(f"🛠 Error: {result.get('ErrorMessage', 'Unknown error')}")
