@@ -1,6 +1,6 @@
+opencv-python-headless==4.5.5.62
 streamlit
 pytesseract
-opencv-python
 Pillow
 gTTS
 langdetect
