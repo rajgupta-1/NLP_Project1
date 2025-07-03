@@ -1,4 +1,6 @@
 streamlit
-SpeechRecognition
+pytesseract
+opencv-python
+Pillow
 gTTS
-streamlit-audio-recorder
+langdetect
