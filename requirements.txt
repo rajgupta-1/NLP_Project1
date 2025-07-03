@@ -1,4 +1,4 @@
 streamlit
 SpeechRecognition
 gTTS
-pydub
+streamlit-audio-recorder
