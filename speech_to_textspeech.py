@@ -1,37 +1,43 @@
-# Install required libraries first:
-# pip install SpeechRecognition
-# pip install PyAudio
-# pip install pyttsx3
-
+import streamlit as st
 import speech_recognition as sr
-import pyttsx3
+from gtts import gTTS
+from io import BytesIO
+from pydub import AudioSegment
+from pydub.playback import play
+import tempfile
 
-# Initialize recognizer and TTS engine
-recognizer = sr.Recognizer()
-engine = pyttsx3.init()
+st.set_page_config(page_title="🎙️ Voice Recognition + TTS", layout="centered")
+st.title("🎧 Voice to Text and Text to Speech App (Web-based)")
 
-# Use Microphone as Source
-with sr.Microphone() as source:
-    print(" Speak something...")
+# File upload
+audio_file = st.file_uploader("📤 Upload a WAV audio file (Mono PCM)", type=["wav"])
 
-    # Listen to input from microphone
-    audio = recognizer.listen(source)
+if audio_file is not None:
+    st.audio(audio_file, format="audio/wav")
 
-    try:
-        # Recognize speech using Google Web Speech API
-        text = recognizer.recognize_google(audio)
-        print("You said: ", text)
+    # Save uploaded file temporarily
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+        tmp.write(audio_file.read())
+        tmp_path = tmp.name
 
-        # Speak the recognized text
-        engine.say(f" {text}")
-        engine.runAndWait()
+    recognizer = sr.Recognizer()
 
-    except sr.UnknownValueError:
-        print("Sorry, I could not understand audio")
-        engine.say("Sorry, I could not understand what you said.")
-        engine.runAndWait()
+    with sr.AudioFile(tmp_path) as source:
+        audio_data = recognizer.record(source)
 
-    except sr.RequestError:
-        print("Sorry, my speech service is down")
-        engine.say("Sorry, my speech service is currently unavailable.")
-        engine.runAndWait()
+        try:
+            text = recognizer.recognize_google(audio_data)
+            st.success(f"📝 Recognized Text: **{text}**")
+
+            # Convert recognized text to speech using gTTS
+            tts = gTTS(text)
+            mp3_fp = BytesIO()
+            tts.write_to_fp(mp3_fp)
+            st.audio(mp3_fp, format="audio/mp3", start_time=0)
+
+        except sr.UnknownValueError:
+            st.error("❌ Could not understand audio.")
+
+        except sr.RequestError:
+            st.error("❌ Speech recognition service is unavailable.")
+
